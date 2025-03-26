@@ -42,6 +42,12 @@
           v-model="selectedFilePath"
           @update:model-value="getFileContent"
         ></v-autocomplete>
+        <v-text-field
+          name="ollamaHost"
+          label="Ollama Host"
+          id="ollama-host"
+          v-model="ollamaHost"
+        ></v-text-field>
         <v-btn color="primary" @click="getChatContent">レビュー</v-btn>
       </v-col>
       <v-col>
@@ -69,7 +75,7 @@
 
 <script setup lang="ts">
 import { Gitlab } from "@gitbeaker/rest";
-import ollama from "ollama";
+import { Ollama } from "ollama";
 
 const gitlabHost = ref("https://gitlab.com");
 const token = ref("");
@@ -82,6 +88,7 @@ const filePathTree = ref<string[]>([]);
 const fileContent = ref("");
 const loading = ref(false);
 const branchError = ref(false);
+const ollamaHost = ref("http://localhost:11434");
 const chatContent = ref("");
 
 const getClient = () => {
@@ -145,13 +152,19 @@ const getFileContent = async (filePath: string | null) => {
 };
 
 const getChatContent = async () => {
-  ollama
-    .chat({
-      model: "gemma3:4b",
-      messages: [
-        {
-          role: "system",
-          content: `あなたはプロのITエンジニアです。
+  if (!ollamaHost.value) {
+    return;
+  }
+  const ollamaClient = new Ollama({
+    host: ollamaHost.value,
+  });
+  chatContent.value = "";
+  const res = await ollamaClient.chat({
+    model: "gemma3:4b",
+    messages: [
+      {
+        role: "system",
+        content: `あなたはプロのITエンジニアです。
     ユーザーからファイルを受け取り、以下の観点でレビューをしてください。
     - セキュリティ
     - 効率
@@ -159,13 +172,16 @@ const getChatContent = async () => {
     解答は日本語で行ってください。
     以下はユーザーのファイルです。
     `,
-        },
-        { role: "user", content: fileContent.value },
-      ],
-      stream: false,
-    })
-    .then((res) => {
-      chatContent.value = res.message.content;
-    });
+      },
+      { role: "user", content: fileContent.value },
+    ],
+    stream: true,
+  });
+  for await (const part of res) {
+    if (part.done) {
+      return;
+    }
+    chatContent.value += part.message.content;
+  }
 };
 </script>

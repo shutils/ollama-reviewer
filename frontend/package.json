@@ -12,8 +12,10 @@
     "lint": "eslint . --fix"
   },
   "dependencies": {
+    "@gitbeaker/rest": "^42.2.0",
     "@mdi/font": "7.4.47",
     "core-js": "^3.37.1",
+    "ollama": "^0.5.14",
     "roboto-fontface": "*",
     "vue": "^3.4.31",
     "vuetify": "^3.6.14"

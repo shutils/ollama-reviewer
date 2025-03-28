@@ -63,7 +63,7 @@
           v-model="systemPrompt"
           auto-grow
         ></v-textarea>
-        <v-btn color="primary" @click="getChatContent">レビュー</v-btn>
+        <v-btn :color="(chatting || !ollamaModel) ? 'disable' : 'primary'" @click="getChatContent" :disabled="chatting || !ollamaModel">レビュー</v-btn>
       </v-col>
       <v-col>
         <v-card>
@@ -114,6 +114,7 @@ const ollamaHost = ref("");
 const ollamaModel = ref("");
 const ollamaModelList = ref<string[]>([]);
 const chatContent = ref("");
+const chatting = ref(false);
 const defaultSystemPrompt = `あなたはプロのITエンジニアです。
 ユーザーからファイルを受け取り、以下の観点でレビューをしてください。
 - セキュリティ

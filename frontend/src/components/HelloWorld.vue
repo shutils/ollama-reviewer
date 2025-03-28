@@ -70,13 +70,27 @@
           v-model="systemPrompt"
           auto-grow
         ></v-textarea>
-        <v-btn :color="(chatting || !ollamaModel) ? 'disable' : 'primary'" @click="getChatContent" :disabled="chatting || !ollamaModel">レビュー</v-btn>
+        <v-btn
+          :color="chatting || !ollamaModel ? 'disable' : 'primary'"
+          @click="getChatContent"
+          :disabled="chatting || !ollamaModel"
+          >レビュー</v-btn
+        >
+        <v-btn
+          class="ml-2"
+          :color="chatting ? 'primary' : 'disable'"
+          @click="abortChat"
+          :disabled="!chatting"
+          >停止</v-btn
+        >
       </v-col>
       <v-col>
         <v-card>
           <v-toolbar density="compact" title="コンテキスト">
             <v-btn @click="editable = !editable">
-              <v-icon :icon="editable ? 'mdi-pencil' : 'mdi-pencil-off'"></v-icon>
+              <v-icon
+                :icon="editable ? 'mdi-pencil' : 'mdi-pencil-off'"
+              ></v-icon>
             </v-btn>
           </v-toolbar>
           <v-textarea
@@ -86,7 +100,7 @@
             :loading="loading"
             auto-grow
           >
-        </v-textarea>
+          </v-textarea>
         </v-card>
       </v-col>
       <v-col>
@@ -96,6 +110,7 @@
           readonly
           v-model="chatContent"
           auto-grow
+          :loading="chatLoading"
         ></v-textarea>
       </v-col>
     </v-row>
@@ -122,6 +137,7 @@ const ollamaModel = ref("");
 const ollamaModelList = ref<string[]>([]);
 const chatContent = ref("");
 const chatting = ref(false);
+const chatLoading = ref(false);
 const defaultSystemPrompt = `あなたはプロのITエンジニアです。
 ユーザーからファイルを受け取り、以下の観点でレビューをしてください。
 - セキュリティ
@@ -130,7 +146,8 @@ const defaultSystemPrompt = `あなたはプロのITエンジニアです。
 解答は日本語で行ってください。
 以下はユーザーのファイルです。`;
 const editable = ref(false);
-const gitDiffEndpoint = ref("")
+const gitDiffEndpoint = ref("");
+const abortingChat = ref(false);
 
 const systemPrompt = ref(defaultSystemPrompt);
 
@@ -216,6 +233,8 @@ const getChatContent = async () => {
     host: ollamaHost.value,
   });
   chatContent.value = "";
+  chatLoading.value = true;
+  chatting.value = true;
   const res = await ollamaClient.chat({
     model: ollamaModel.value,
     messages: [
@@ -228,11 +247,24 @@ const getChatContent = async () => {
     stream: true,
   });
   for await (const part of res) {
+    chatLoading.value = false;
     if (part.done) {
+      return;
+    }
+    if (abortingChat.value) {
+      res.abort();
+      abortingChat.value = false;
       return;
     }
     chatContent.value += part.message.content;
   }
+  chatting.value = false;
+};
+
+const abortChat = async () => {
+  abortingChat.value = true;
+  chatting.value = false;
+  chatLoading.value = false;
 };
 
 const getGitDiff = async () => {
@@ -242,11 +274,10 @@ const getGitDiff = async () => {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
     fileContent.value = (await response.json()).diff;
-    return
+    return;
   } catch (error) {
     console.error("Failed to fetch git diff:", error);
     return null;
   }
-}
-
+};
 </script>

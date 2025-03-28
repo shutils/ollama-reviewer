@@ -6,6 +6,9 @@ ENV POETRY_HOME=/opt/poetry
 ENV POETRY_VENV=/opt/poetry-venv
 ENV POETRY_CACHE_DIR=/opt/.cache
 
+RUN apt update && apt install git -y
+RUN git config --global --add safe.directory /target
+
 # Install poetry separated from system interpreter
 RUN python3 -m venv $POETRY_VENV \
 	&& $POETRY_VENV/bin/pip install -U pip setuptools \
@@ -21,5 +24,5 @@ COPY poetry.lock pyproject.toml ./
 RUN poetry install
 
 # Run your app
-COPY src /app
-ENTRYPOINT [ "poetry", "run", "flask", "--app", "git.app", "run", "--debug", "--port", "5000", "--host", "0.0.0.0"]
+COPY src /app/src
+ENTRYPOINT [ "poetry", "run", "flask", "--app", "src.git.app", "run", "--debug", "--port", "5000", "--host", "0.0.0.0"]

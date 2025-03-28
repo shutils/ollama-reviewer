@@ -44,6 +44,13 @@
           @update:model-value="getFileContent"
         ></v-autocomplete>
         <v-text-field
+          name="gitDiffEndpoint"
+          label="Git diff Endpoint"
+          id="git-diff-endpoint"
+          v-model="gitDiffEndpoint"
+          @change="getGitDiff"
+        ></v-text-field>
+        <v-text-field
           name="ollamaHost"
           label="Ollama Host"
           id="ollama-host"
@@ -123,6 +130,7 @@ const defaultSystemPrompt = `あなたはプロのITエンジニアです。
 解答は日本語で行ってください。
 以下はユーザーのファイルです。`;
 const editable = ref(false);
+const gitDiffEndpoint = ref("")
 
 const systemPrompt = ref(defaultSystemPrompt);
 
@@ -226,4 +234,19 @@ const getChatContent = async () => {
     chatContent.value += part.message.content;
   }
 };
+
+const getGitDiff = async () => {
+  try {
+    const response = await fetch(gitDiffEndpoint.value);
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    fileContent.value = (await response.json()).diff;
+    return
+  } catch (error) {
+    console.error("Failed to fetch git diff:", error);
+    return null;
+  }
+}
+
 </script>

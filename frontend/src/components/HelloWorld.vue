@@ -98,7 +98,7 @@
             :readonly="!editable"
             v-model="fileContent"
             :loading="loading"
-            auto-grow
+            style="min-height: 86vh;"
           >
           </v-textarea>
         </v-card>
@@ -109,8 +109,8 @@
           name="chat"
           readonly
           v-model="chatContent"
-          auto-grow
           :loading="chatLoading"
+          style="min-height: 94vh;"
         ></v-textarea>
       </v-col>
     </v-row>

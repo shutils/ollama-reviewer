@@ -7,6 +7,7 @@
           label="GitLab Host"
           id="host"
           v-model="gitlabHost"
+          placeholder="https://gitlab.com"
         ></v-text-field>
         <v-text-field
           name="name"
@@ -47,7 +48,21 @@
           label="Ollama Host"
           id="ollama-host"
           v-model="ollamaHost"
+          placeholder="http://localhost:11434"
+          @change="getOllamaModelList"
         ></v-text-field>
+        <v-autocomplete
+          label="ollamaModel"
+          :items="ollamaModelList"
+          :disabled="!(ollamaModelList.length !== 0)"
+          v-model="ollamaModel"
+        ></v-autocomplete>
+        <v-textarea
+          label="システムプロンプト"
+          name="systemPrompt"
+          v-model="systemPrompt"
+          auto-grow
+        ></v-textarea>
         <v-btn color="primary" @click="getChatContent">レビュー</v-btn>
       </v-col>
       <v-col>
@@ -77,19 +92,30 @@
 import { Gitlab } from "@gitbeaker/rest";
 import { Ollama } from "ollama";
 
-const gitlabHost = ref("https://gitlab.com");
+const gitlabHost = ref("");
 const token = ref("");
 const projectId = ref(0);
 const projectName = ref("");
-const selectedBranch = ref("main");
+const selectedBranch = ref("");
 const projectBranches = ref<string[]>([]);
 const selectedFilePath = ref("");
 const filePathTree = ref<string[]>([]);
 const fileContent = ref("");
 const loading = ref(false);
 const branchError = ref(false);
-const ollamaHost = ref("http://localhost:11434");
+const ollamaHost = ref("");
+const ollamaModel = ref("");
+const ollamaModelList = ref<string[]>([]);
 const chatContent = ref("");
+const defaultSystemPrompt = `あなたはプロのITエンジニアです。
+ユーザーからファイルを受け取り、以下の観点でレビューをしてください。
+- セキュリティ
+- 効率
+- リファクタリングの余地
+解答は日本語で行ってください。
+以下はユーザーのファイルです。`;
+
+const systemPrompt = ref(defaultSystemPrompt);
 
 const getClient = () => {
   if (!token.value || !gitlabHost) {
@@ -151,6 +177,20 @@ const getFileContent = async (filePath: string | null) => {
   });
 };
 
+const getOllamaModelList = async () => {
+  ollamaModelList.value = [];
+  ollamaModel.value = "";
+  if (!ollamaHost.value) {
+    return;
+  }
+  const ollamaClient = new Ollama({
+    host: ollamaHost.value,
+  });
+  ollamaClient.list().then((res) => {
+    ollamaModelList.value = res.models.map((model) => model.name);
+  });
+};
+
 const getChatContent = async () => {
   if (!ollamaHost.value) {
     return;
@@ -160,18 +200,11 @@ const getChatContent = async () => {
   });
   chatContent.value = "";
   const res = await ollamaClient.chat({
-    model: "gemma3:4b",
+    model: ollamaModel.value,
     messages: [
       {
         role: "system",
-        content: `あなたはプロのITエンジニアです。
-    ユーザーからファイルを受け取り、以下の観点でレビューをしてください。
-    - セキュリティ
-    - 効率
-    - リファクタリングの余地
-    解答は日本語で行ってください。
-    以下はユーザーのファイルです。
-    `,
+        content: systemPrompt.value,
       },
       { role: "user", content: fileContent.value },
     ],

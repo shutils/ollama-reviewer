@@ -66,14 +66,21 @@
         <v-btn color="primary" @click="getChatContent">レビュー</v-btn>
       </v-col>
       <v-col>
-        <v-textarea
-          label="選択されたファイルが表示されます"
-          name="fileBlob"
-          readonly
-          v-model="fileContent"
-          :loading="loading"
-          auto-grow
-        ></v-textarea>
+        <v-card>
+          <v-toolbar density="compact" title="コンテキスト">
+            <v-btn @click="editable = !editable">
+              <v-icon :icon="editable ? 'mdi-pencil' : 'mdi-pencil-off'"></v-icon>
+            </v-btn>
+          </v-toolbar>
+          <v-textarea
+            name="fileBlob"
+            :readonly="!editable"
+            v-model="fileContent"
+            :loading="loading"
+            auto-grow
+          >
+        </v-textarea>
+        </v-card>
       </v-col>
       <v-col>
         <v-textarea
@@ -114,6 +121,7 @@ const defaultSystemPrompt = `あなたはプロのITエンジニアです。
 - リファクタリングの余地
 解答は日本語で行ってください。
 以下はユーザーのファイルです。`;
+const editable = ref(false);
 
 const systemPrompt = ref(defaultSystemPrompt);
 

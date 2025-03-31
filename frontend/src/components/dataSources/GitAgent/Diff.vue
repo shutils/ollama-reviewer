@@ -1,12 +1,4 @@
-<template>
-  <v-text-field
-    name="gitDiffEndpoint"
-    label="Git diff Endpoint"
-    id="git-diff-endpoint"
-    v-model="gitDiffEndpoint"
-    @change="getGitDiff"
-  ></v-text-field>
-</template>
+<template></template>
 
 <script setup lang="ts">
 const props = defineProps({
@@ -14,21 +6,27 @@ const props = defineProps({
     type: Function,
     default: (content: string) => {},
   },
+  gitEndpoint: {
+    type: String,
+    default: "",
+  },
 });
-
-const gitDiffEndpoint = ref("");
 
 const getGitDiff = async () => {
   try {
-    const response = await fetch(gitDiffEndpoint.value);
+    const response = await fetch(props.gitEndpoint + "/git-diff");
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
-    props.contentSetter((await response.json()).diff)
+    props.contentSetter((await response.json()).diff);
     return;
   } catch (error) {
     console.error("Failed to fetch git diff:", error);
     return null;
   }
 };
+
+onMounted(() => {
+  getGitDiff();
+});
 </script>

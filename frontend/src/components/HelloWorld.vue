@@ -1,14 +1,20 @@
 <template>
   <v-container class="fill-height">
     <v-row>
-      <v-col cols="3">
+      <v-col cols="2">
         <v-autocomplete
           label="Data source"
           :items="dataSourceList"
           v-model="dataSource"
         ></v-autocomplete>
-        <GitLab v-if="dataSource === 'GitLab'" :content-setter="contentSetter" />
-        <GitDiff v-if="dataSource === 'Git diff'" :content-setter="contentSetter" />
+        <GitLab
+          v-if="dataSource === 'GitLab'"
+          :content-setter="contentSetter"
+        />
+        <GitDiff
+          v-if="dataSource === 'Git diff'"
+          :content-setter="contentSetter"
+        />
         <v-text-field
           name="ollamaHost"
           label="Ollama Host"
@@ -43,7 +49,7 @@
           >停止</v-btn
         >
       </v-col>
-      <v-col>
+      <v-col cols="5">
         <v-card>
           <v-toolbar density="compact" title="コンテキスト">
             <v-btn @click="editable = !editable">
@@ -62,15 +68,14 @@
           </v-textarea>
         </v-card>
       </v-col>
-      <v-col>
-        <v-textarea
-          label="チャット内容が表示されます"
-          name="chat"
-          readonly
-          v-model="chatContent"
+      <v-col cols="5">
+        <v-card
+          class="overflow-y-scroll overflow-x-scroll"
+          height="90vh"
           :loading="chatLoading"
-          style="min-height: 92vh"
-        ></v-textarea>
+        >
+          <div v-html="parcedChatContent" class="pa-2"></div>
+        </v-card>
       </v-col>
     </v-row>
   </v-container>
@@ -78,9 +83,24 @@
 
 <script setup lang="ts">
 import { Ollama } from "ollama";
+import { Marked } from "marked";
+import { markedHighlight } from "marked-highlight";
+import hljs from "highlight.js";
+import 'highlight.js/styles/github-dark.css'
 
-const dataSourceList = ref(["GitLab", "Git diff"])
-const dataSource = ref("")
+const marked = new Marked(
+  markedHighlight({
+    emptyLangClass: "hljs",
+    langPrefix: "hljs language-",
+    highlight(code, lang, info) {
+      const language = hljs.getLanguage(lang) ? lang : "plaintext";
+      return hljs.highlight(code, { language }).value;
+    },
+  })
+);
+
+const dataSourceList = ref(["GitLab", "Git diff"]);
+const dataSource = ref("");
 
 const fileContent = ref("");
 const loading = ref(false);
@@ -98,8 +118,8 @@ const defaultSystemPrompt = `あなたはプロのITエンジニアです。
 解答は日本語で行ってください。
 以下はユーザーのファイルです。`;
 const editable = ref(false);
-const gitDiffEndpoint = ref("");
 const abortingChat = ref(false);
+const parcedChatContent = ref("");
 
 const systemPrompt = ref(defaultSystemPrompt);
 
@@ -145,7 +165,7 @@ const getChatContent = async () => {
   for await (const part of res) {
     chatLoading.value = false;
     if (part.done) {
-      return;
+      break;
     }
     if (abortingChat.value) {
       res.abort();
@@ -153,6 +173,7 @@ const getChatContent = async () => {
       return;
     }
     chatContent.value += part.message.content;
+    parcedChatContent.value = await marked.parse(chatContent.value);
   }
   chatting.value = false;
 };
@@ -161,19 +182,5 @@ const abortChat = async () => {
   abortingChat.value = true;
   chatting.value = false;
   chatLoading.value = false;
-};
-
-const getGitDiff = async () => {
-  try {
-    const response = await fetch(gitDiffEndpoint.value);
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-    fileContent.value = (await response.json()).diff;
-    return;
-  } catch (error) {
-    console.error("Failed to fetch git diff:", error);
-    return null;
-  }
 };
 </script>

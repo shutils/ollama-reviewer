@@ -11,10 +11,7 @@
           v-if="dataSource === 'GitLab'"
           :content-setter="contentSetter"
         />
-        <GitDiff
-          v-if="dataSource === 'Git diff'"
-          :content-setter="contentSetter"
-        />
+        <GitSource v-if="dataSource === 'Git Agent'" :content-setter="contentSetter" />
         <v-text-field
           name="ollamaHost"
           label="Ollama Host"
@@ -86,7 +83,8 @@ import { Ollama } from "ollama";
 import { Marked } from "marked";
 import { markedHighlight } from "marked-highlight";
 import hljs from "highlight.js";
-import 'highlight.js/styles/github-dark.css'
+import "highlight.js/styles/github-dark.css";
+import GitSource from "@/components/dataSources/GitAgent/Main.vue";
 
 const marked = new Marked(
   markedHighlight({
@@ -99,7 +97,7 @@ const marked = new Marked(
   })
 );
 
-const dataSourceList = ref(["GitLab", "Git diff"]);
+const dataSourceList = ref(["GitLab", "Git Agent"]);
 const dataSource = ref("");
 
 const fileContent = ref("");

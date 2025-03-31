@@ -12,6 +12,7 @@ declare module 'vue' {
     File: typeof import('./components/dataSources/GitAgent/File.vue')['default']
     GitLab: typeof import('./components/dataSources/GitLab.vue')['default']
     HelloWorld: typeof import('./components/HelloWorld.vue')['default']
+    Main: typeof import('./components/dataSources/GitAgent/Main.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
   }

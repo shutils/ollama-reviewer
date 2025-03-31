@@ -11,7 +11,10 @@
           v-if="dataSource === 'GitLab'"
           :content-setter="contentSetter"
         />
-        <GitSource v-if="dataSource === 'Git Agent'" :content-setter="contentSetter" />
+        <GitSource
+          v-if="dataSource === 'Git Agent'"
+          :content-setter="contentSetter"
+        />
         <v-text-field
           name="ollamaHost"
           label="Ollama Host"
@@ -168,12 +171,13 @@ const getChatContent = async () => {
     if (abortingChat.value) {
       res.abort();
       abortingChat.value = false;
-      return;
+      break;
     }
     chatContent.value += part.message.content;
     parcedChatContent.value = await marked.parse(chatContent.value);
   }
   chatting.value = false;
+  appendCopyButton()
 };
 
 const abortChat = async () => {
@@ -181,4 +185,51 @@ const abortChat = async () => {
   chatting.value = false;
   chatLoading.value = false;
 };
+
+const appendCopyButton = () => {
+  document.querySelectorAll("pre").forEach((pre) => {
+    const code = pre.querySelector("code.hljs");
+    if (!code) return;
+    if (code.querySelector("button.copy-button")) {
+      return
+    }
+
+    const copyButton = document.createElement("button");
+    copyButton.textContent = "コピー";
+    copyButton.classList.add("copy-button");
+
+    copyButton.addEventListener("click", () => {
+      navigator.clipboard.writeText(code.innerText).then(() => {
+        copyButton.textContent = "コピーしました!";
+        setTimeout(() => (copyButton.textContent = "コピー"), 2000);
+      });
+    });
+
+    pre.style.position = "relative";
+    pre.prepend(copyButton);
+  });
+};
+
+onMounted(() => {
+  appendCopyButton()
+});
 </script>
+
+<style>
+.copy-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.copy-button:hover {
+  background: rgba(0, 0, 0, 0.9);
+}
+</style>

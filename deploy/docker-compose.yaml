@@ -1,0 +1,11 @@
+version: "3.10"
+
+name: "review-ui"
+
+services:
+  review-ui:
+    build:
+      context: ..
+      dockerfile: nginx/Dockerfile
+    ports:
+      - "8080:80"
